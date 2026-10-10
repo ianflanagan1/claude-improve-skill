@@ -1,8 +1,21 @@
 # improve-skill
 
-A Claude Code skill that fixes other skills from the problems they log while running.
+A Claude Code plugin for keeping skills right: a hook that holds new and changed skills to your conventions, and a skill that fixes skills from the problems they log while running.
 
-## How it works
+## Skill conventions
+
+`skills/improve-skill/references/skill-conventions.md` holds how you want skills written, for example the status-line emojis a skill's reply starts with. Edit it to add your own.
+
+The plugin's `PreToolUse` hook (`scripts/skill-conventions-gate.py`) puts it in front of Claude before the first skill change in each session, however the change is made. It refuses that first call with the file's text as the reason; Claude applies it and retries, and the rest of the session's calls pass. The text goes in the reason rather than a path, so Claude needs no permission to read a file outside its project. Nothing is added to prompts that don't touch skills.
+
+A call changes a skill when it is:
+- a Write or Edit on a `SKILL.md` anywhere on disk, or on any file under a directory holding one;
+- the Skill tool invoking skill-creator;
+- a Bash command that names `SKILL.md` and looks like it writes (a redirect, `tee`, `sed -i`, `mv` and so on). This one is a heuristic.
+
+Anything the hook can't parse passes, so a broken hook never blocks work. It needs `python3` (the macOS system one is enough).
+
+## Fixing skills from logged problems
 
 1. **Claude reports.** When any skill goes wrong (one of its scripts fails, an instruction can't be followed, Claude has to work around it, or you correct its result), Claude appends an entry to `~/.claude/skill-feedback/<skill>.md` and ends the run with one line pointing here. The steps are in `skills/improve-skill/references/reporting-problems.md`; one rule in your global `CLAUDE.md` turns them on for every skill, so skills don't need to change.
 2. **You run `/improve-skill <skill>`.** It finds the skill's source (following symlinks to its repository) and works through the open entries. For a script problem it states the behaviour the script should have, writes or strengthens a test for that behaviour, confirms the test fails, and changes the script until the whole suite passes. For an instruction problem it makes the smallest wording change and explains why it works.
@@ -23,7 +36,20 @@ A Claude Code skill that fixes other skills from the problems they log while run
 
 ## Install
 
-Symlink or copy `skills/improve-skill/` to `~/.claude/skills/improve-skill/`, so it's available in every project. It runs only when you invoke it.
+Install the plugin, which brings the hook and the skill (as `/improve-skill:improve-skill`):
+
+```
+/plugin marketplace add ianflanagan1/improve-skill
+/plugin install improve-skill@improve-skill
+```
+
+Or from a local clone, `/plugin marketplace add ~/projects/skills/improve-skill` instead. That runs straight from the clone, so changes to it apply from the next session. A GitHub install is a copy: pick up new pushes with `/plugin marketplace update improve-skill`, then `/plugin update improve-skill@improve-skill`.
+
+Also symlink `skills/improve-skill/` to `~/.claude/skills/improve-skill/`, which gives the plain `/improve-skill` and the stable path the rule below reads from:
+
+```sh
+ln -s ~/projects/skills/improve-skill/skills/improve-skill ~/.claude/skills/improve-skill
+```
 
 Then add to `~/.claude/CLAUDE.md`:
 
@@ -31,4 +57,11 @@ Then add to `~/.claude/CLAUDE.md`:
 ## Skill problems
 
 When a skill goes wrong itself (a script of its fails, an instruction can't be followed, you work around it, or I correct a result its instructions led to), follow `~/.claude/skills/improve-skill/references/reporting-problems.md`. Skip this if that file doesn't exist.
+```
+
+## Development
+
+```sh
+devbox run test   # shunit2
+devbox run lint   # shellcheck
 ```
