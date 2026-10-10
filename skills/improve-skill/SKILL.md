@@ -1,0 +1,68 @@
+---
+name: improve-skill
+description: Fix a skill from the problems logged in ~/.claude/skill-feedback. Finds the skill's source, pins each problem down as a failing behaviour test, changes the skill, and shows the before and after for review. Never commits.
+argument-hint: [skill name]
+disable-model-invocation: true
+---
+
+# Improve skill
+
+Turn logged problems with a skill into tested changes to its source, for the user to review and commit.
+
+## Gather (`/improve-skill $ARGUMENTS`)
+
+Problem logs, with their number of open entries:
+
+```
+!`for f in ~/.claude/skill-feedback/*.md; do [ -f "$f" ] && printf '%s  %s open\n' "$(basename "$f" .md)" "$(grep -c '^## ' "$f" | tr -d ' ')"; done 2>/dev/null; echo end`
+```
+
+- No logs listed: reply `No skill problems logged.` and stop.
+- `$ARGUMENTS` names the skill. If it is empty and only one log has open entries, use that one; otherwise ask which.
+- Read that log. Entries marked `- status:` are already handled; skip them.
+
+## Find the source
+
+1. Look for the installed skill, first match wins: `.claude/skills/<name>` in the current project, `~/.claude/skills/<name>`, then plugin installs (`find ~/.claude/plugins -type d -path '*/skills/<name>'`).
+2. Resolve symlinks (`cd -P <dir> && pwd`) and find its repository (`git -C <dir> rev-parse --show-toplevel`).
+3. If the skill is a plugin install under `~/.claude/plugins`, it is a copy: don't edit it. Read `repository` from its `plugin.json` and ask the user for the path to a local clone.
+4. Note any uncommitted changes in that repository (`git status --short`). Leave them alone, and keep your changes separate from them.
+5. Find how the repository runs its tests and lint: README, `CLAUDE.md`, `devbox.json` scripts, `Makefile`, `package.json`. Run the tests once before changing anything, so you know what already fails.
+
+## Fix each entry
+
+Classify it first:
+- **Script**: a script crashed, gave wrong output or lacked a behaviour.
+- **Instruction**: SKILL.md or a reference file was wrong, unclear or missing a case.
+- **Not the skill**: the cause was the user's repository or environment. Mark it and move on.
+- **Can't reproduce**: say so and mark it; don't guess at a fix.
+
+### Script
+
+1. State the behaviour the script should have, as one sentence about inputs and outcomes, not about the incident: "a file ending without a newline is staged exactly", not "fix the bug from Tuesday".
+2. Find the test that covers that behaviour. If there is one, work out why it passed and strengthen it. If there isn't, add a test named for the behaviour, next to the tests for related behaviour.
+3. Run it and confirm it fails, for the reason in the log. If it passes, the behaviour isn't what broke: look again.
+4. Change the script until it passes. Then run the whole suite and the lint.
+
+Never weaken, skip or delete a test to make a change pass.
+
+### Instruction
+
+1. Write down the situation from the log and what the current wording led to.
+2. Change the smallest amount of text that makes the right action clear. Keep the file's voice and structure.
+3. If the repository has evals or scenario tests for its skills, add a case for the situation. Otherwise show, in the report, how the new wording leads to the right action.
+4. If the fix is a deterministic procedure, prefer moving it into a script with tests over adding prose.
+
+## Mark entries
+
+Add a line under each entry you handled:
+
+```
+- status: <fixed (uncommitted) | not the skill: <reason> | can't reproduce> <YYYY-MM-DD>
+```
+
+## Report
+
+For each entry: the problem in one line, its class, and for fixes the behaviour now asserted, the test result before (failing, with its message) and after (passing), and the files changed. Then the full test and lint result, and `git diff --stat` for the source repository.
+
+End by telling the user the changes are uncommitted in `<repository>`, for review and `/commit` there. Don't commit, push or edit anything outside that repository and the log.
