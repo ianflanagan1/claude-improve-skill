@@ -22,3 +22,13 @@ The command-line tools in `~/projects/cli` end with the same status lines, throu
 - After ❌: the error, unchanged, in a fenced `text` code block, then one short line on the cause and the fix you propose. Don't apply the fix unless the skill says to.
 - After ⚠️: the precondition that failed and what the user should do about it.
 - After ➖: nothing. Make no tool calls once you know there's nothing to do.
+
+## Permissions
+
+A skill runs with no one to approve a command when it's called headless (`claude -p`, CI, a script). Auto mode and approval prompts hide a missing rule interactively, so don't take an interactive run as proof.
+
+- Every command a skill runs as it loads (each `` !`…` `` line) must be allowed by its `allowed-tools`, every part of it: in `sh "${CLAUDE_SKILL_DIR}/scripts/x.sh" 2>&1; echo "exit $?"`, both the `sh` and the `echo`. Otherwise the skill doesn't load, and a headless run reports success with an empty result.
+- Write rules for the skill's own scripts as `Bash(sh *scripts/<name>.sh*)`, which matches the path quoted or not. `Bash(sh */scripts/<name>.sh:*)` doesn't match a quoted path. Allow the exit line with `Bash(echo "exit $?")`.
+- Also allow the commands the skill tells Claude to run, such as `Bash(git commit:*)`.
+- A load-time `cat` of a file that resolves outside the session's working directories is blocked whatever the rules say, also when the path goes through a symlink, such as a skill installed as a link to its repository. Rules can't fix that; adding the repository to `permissions.additionalDirectories` does.
+- Where the skill's repository has tests, add one that checks every load-time command against `allowed-tools`. Before relying on a skill headless, run it once with `claude -p` in default mode, not auto, and check that `permission_denials` is empty.
