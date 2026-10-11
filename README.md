@@ -39,16 +39,16 @@ Anything the hook can't parse passes, so a broken hook never blocks work. It nee
 Install the plugin, which brings the hook and the skill (as `/improve-skill:improve-skill`):
 
 ```
-/plugin marketplace add ianflanagan1/improve-skill
+/plugin marketplace add ianflanagan1/claude-improve-skill
 /plugin install improve-skill@improve-skill
 ```
 
-Or from a local clone, `/plugin marketplace add ~/projects/skills/improve-skill` instead. That runs straight from the clone, so changes to it apply from the next session. A GitHub install is a copy: pick up new pushes with `/plugin marketplace update improve-skill`, then `/plugin update improve-skill@improve-skill`.
+Or from a local clone, `/plugin marketplace add ~/projects/claude/improve-skill` instead. That runs straight from the clone, so changes to it apply from the next session. A GitHub install is a copy: pick up new pushes with `/plugin marketplace update improve-skill`, then `/plugin update improve-skill@improve-skill`.
 
 Also symlink `skills/improve-skill/` to `~/.claude/skills/improve-skill/`, which gives the plain `/improve-skill` and the stable path the rule below reads from:
 
 ```sh
-ln -s ~/projects/skills/improve-skill/skills/improve-skill ~/.claude/skills/improve-skill
+ln -s ~/projects/claude/improve-skill/skills/improve-skill ~/.claude/skills/improve-skill
 ```
 
 Then add to `~/.claude/CLAUDE.md`:

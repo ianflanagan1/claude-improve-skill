@@ -32,3 +32,11 @@ A skill runs with no one to approve a command when it's called headless (`claude
 - Also allow the commands the skill tells Claude to run, such as `Bash(git commit:*)`.
 - A load-time `cat` of a file that resolves outside the session's working directories is blocked whatever the rules say, also when the path goes through a symlink, such as a skill installed as a link to its repository. Rules can't fix that; adding the repository to `permissions.additionalDirectories` does.
 - Where the skill's repository has tests, add one that checks every load-time command against `allowed-tools`. Before relying on a skill headless, run it once with `claude -p` in default mode, not auto, and check that `permission_denials` is empty.
+
+## Repository
+
+A skill or plugin that gets its own repository lives in `~/projects/claude/<name>/`, and its GitHub repository is `claude-<name>`. The folder and the plugin's `name` stay bare, since the folder says what it is.
+
+- Publish with `github publish <dir> claude-<name>`. Without the name, the repository takes the folder's name.
+- `plugin.json`'s `homepage` and `repository`, and the README's `/plugin marketplace add ianflanagan1/claude-<name>`, name the prefixed repository.
+- To rename one already published, use `github rename <dir> claude-<name>`, then fix those references.
