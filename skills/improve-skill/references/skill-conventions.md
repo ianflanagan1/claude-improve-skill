@@ -6,7 +6,7 @@ How the user wants skills written. Apply these whenever you create or change a s
 
 A skill's reply starts with one status line when its run ends in one of these outcomes. Write each in SKILL.md as the exact text in backticks: the emoji, a space, and a short sentence ending in a full stop.
 
-The command-line tools in `~/projects/cli` end with the same status lines, through `cli-kit/src/cli_kit/outcome.py`; change the two together. A skill that runs one of those commands can repeat the command's status line as its own.
+This section defines the scheme. The command-line tools built on [cli-kit](https://github.com/ianflanagan1/cli-kit) implement it, so a skill that runs one of those commands can repeat the command's status line as its own.
 
 | Emoji | Outcome | Example |
 |---|---|---|
